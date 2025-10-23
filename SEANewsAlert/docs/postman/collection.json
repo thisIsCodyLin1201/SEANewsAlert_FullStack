@@ -1,0 +1,135 @@
+{
+  "info": {
+    "name": "SEA News Alert API",
+    "description": "東南亞金融新聞搜尋系統 API 測試集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:8000/health",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["health"]
+        },
+        "description": "檢查 API 服務是否正常運行"
+      }
+    },
+    {
+      "name": "Create News Report Task",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_prompt\": \"搜尋最近一週關於新加坡金融科技的英文新聞，大約 8-10 篇\",\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/api/tasks/news-report",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["api", "tasks", "news-report"]
+        },
+        "description": "創建新聞報告任務，返回 task_id"
+      }
+    },
+    {
+      "name": "Get Task Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:8000/api/tasks/{{task_id}}",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["api", "tasks", "{{task_id}}"]
+        },
+        "description": "查詢任務狀態（請將 {{task_id}} 替換為實際的 task_id）"
+      }
+    },
+    {
+      "name": "Create Task - Full Parameters",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_prompt\": \"新加坡金融科技發展趨勢\",\n  \"email\": \"test@example.com\",\n  \"language\": \"English\",\n  \"time_range\": \"最近 7 天內\",\n  \"count_hint\": \"8-10篇\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/api/tasks/news-report",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["api", "tasks", "news-report"]
+        },
+        "description": "創建任務（包含所有參數）"
+      }
+    },
+    {
+      "name": "Create Task - Vietnam Stock",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_prompt\": \"幫我找最近一個月關於越南股市的中文報導，5-8 篇\",\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/api/tasks/news-report",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["api", "tasks", "news-report"]
+        },
+        "description": "範例：搜尋越南股市新聞"
+      }
+    },
+    {
+      "name": "Create Task - Thailand Economy",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_prompt\": \"泰國經濟政策變化，最近兩週的英文新聞，大約 10 篇\",\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/api/tasks/news-report",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["api", "tasks", "news-report"]
+        },
+        "description": "範例：搜尋泰國經濟政策新聞"
+      }
+    }
+  ]
+}

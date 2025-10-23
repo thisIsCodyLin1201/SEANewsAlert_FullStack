@@ -1,0 +1,21 @@
+# FastAPI Backend Dependencies
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9
+pydantic>=2.6.0
+pydantic[email]>=2.6.0
+
+# Existing dependencies
+agno>=2.0.0
+openai>=1.0.0
+python-dotenv>=1.0.0
+reportlab>=4.0.0
+markdown>=3.5.0
+weasyprint>=60.0
+email-validator>=2.1.0
+pillow>=10.0.0
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# Optional: Streamlit (if you want to keep the old UI)
+# streamlit>=1.32.0

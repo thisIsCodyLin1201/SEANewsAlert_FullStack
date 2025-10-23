@@ -1,0 +1,148 @@
+/* -------------------- Dashboard Container -------------------- */
+.dashboard-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: "Source Han Serif SC", "思源宋體", "Noto Serif SC", serif;
+}
+
+.dashboard-header h1 {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.dashboard-header p {
+  font-size: 1rem;
+  color: #555;
+}
+
+/* -------------------- Section 樣式 -------------------- */
+.section {
+  margin-bottom: 20px;
+}
+
+.prompt-input,
+.email-input {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: vertical;
+  font-family: "Source Han Serif SC", "思源宋體", "Noto Serif SC", serif;
+}
+
+.prompt-input {
+  min-height: 80px;
+}
+
+.input-error {
+  border-color: #d9534f;
+}
+
+.error-message {
+  color: #d9534f;
+  margin-top: 6px;
+  font-family: "Source Han Serif SC", "思源宋體", "Noto Serif SC", serif;
+}
+
+.success-message {
+  color: #5cb85c;
+  margin-top: 6px;
+  font-family: "Source Han Serif SC", "思源宋體", "Noto Serif SC", serif;
+}
+
+/* -------------------- 生成按鈕 -------------------- */
+.generate-section {
+  margin-bottom: 20px;
+}
+
+.action-button {
+  padding: 10px 24px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Source Han Serif SC", "思源宋體", "Noto Serif SC", serif;
+}
+
+.action-button.creating { background-color: #f0ad4e; color: #fff; }
+.action-button.running { background-color: #0275d8; color: #fff; }
+.action-button.completed { background-color: #5cb85c; color: #fff; }
+.action-button.failed { background-color: #d9534f; color: #fff; }
+
+.action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* -------------------- Spinner -------------------- */
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #fff;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  margin-right: 6px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* -------------------- 進度條 -------------------- */
+.progress-section {
+  margin-top: 10px;
+  font-family: 'Source Han Serif SC', '思源宋體', serif;
+}
+
+.progress-bar-wrapper {
+  width: 100%;
+  height: 14px;
+  background-color: #eee;
+  border-radius: 7px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4caf50, #81c784);
+  transition: width 0.5s ease-in-out;
+  border-radius: 7px 0 0 7px;
+}
+
+.error-message {
+  color: #d32f2f;
+  margin-top: 10px;
+}
+
+.success-message {
+  color: #388e3c;
+  margin-top: 10px;
+}
+
+/* -------------------- 報告下載 -------------------- */
+.report-result a {
+  text-decoration: none;
+  color: #0275d8;
+  font-weight: 500;
+  font-family: "Source Han Serif SC", "思源宋體", "Noto Serif SC", serif;
+}
+
+.report-result a:hover {
+  text-decoration: underline;
+}
+
+/* -------------------- 其他小樣式 -------------------- */
+p {
+  margin: 4px 0;
+}

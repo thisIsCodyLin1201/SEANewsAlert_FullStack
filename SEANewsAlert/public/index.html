@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東南亞金融新聞搜尋系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #1a5490;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="email"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="email"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+        }
+
+        .info-note {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #e8f4f8;
+            border-left: 4px solid #667eea;
+            border-radius: 6px;
+        }
+
+        .info-note p {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .info-note strong {
+            color: #667eea;
+        }
+
+        .info-note ul {
+            margin: 10px 0 10px 20px;
+            padding: 0;
+        }
+
+        .info-note li {
+            margin: 5px 0;
+            color: #555;
+            font-size: 13px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status-box.show {
+            display: block;
+        }
+
+        .status-box.info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .status-box.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .status-box.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .progress-info {
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .artifact-links {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .artifact-links h4 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .artifact-links p {
+            font-size: 13px;
+            color: #666;
+            word-break: break-all;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌏 東南亞金融新聞搜尋系統</h1>
+        <p class="subtitle">輸入您的搜尋需求，系統將自動生成報告並發送至您的信箱</p>
+
+        <form id="newsForm">
+            <div class="form-group">
+                <label for="userPrompt">搜尋需求 *</label>
+                <textarea 
+                    id="userPrompt" 
+                    name="userPrompt" 
+                    placeholder="請詳細描述您的需求，例如：&#10;• 「搜尋最近一週關於新加坡金融科技的英文新聞，大約 8-10 篇」&#10;• 「幫我找最近一個月越南股市的中文報導，5 篇左右」&#10;• 「泰國經濟政策變化，最近兩週的新聞」"
+                    required
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="email">收件者信箱 *</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    placeholder="your.email@example.com"
+                    required
+                />
+            </div>
+
+            <div class="info-note">
+                <p>� <strong>提示：</strong>系統會自動解析您的需求，包括：</p>
+                <ul>
+                    <li>📅 時間範圍（例如：「最近一週」、「上個月」）</li>
+                    <li>🔢 新聞數量（例如：「10篇新聞」、「5-8則」）</li>
+                    <li>🌐 語言偏好（例如：「英文新聞」、「中文報導」）</li>
+                </ul>
+                <p>只需在上方輸入您的完整需求即可！</p>
+            </div>
+
+            <button type="submit" id="submitBtn">
+                開始搜尋
+            </button>
+        </form>
+
+        <div id="statusBox" class="status-box">
+            <div id="statusMessage"></div>
+            <div class="progress-bar">
+                <div id="progressBarFill" class="progress-bar-fill"></div>
+            </div>
+            <div id="progressInfo" class="progress-info"></div>
+            <div id="artifactLinks" class="artifact-links" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        let pollingInterval = null;
+
+        const form = document.getElementById('newsForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusBox = document.getElementById('statusBox');
+        const statusMessage = document.getElementById('statusMessage');
+        const progressBarFill = document.getElementById('progressBarFill');
+        const progressInfo = document.getElementById('progressInfo');
+        const artifactLinks = document.getElementById('artifactLinks');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userPrompt = document.getElementById('userPrompt').value;
+            const email = document.getElementById('email').value;
+
+            // 停用按鈕
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading-spinner"></span>提交中...';
+
+            // 顯示狀態框
+            showStatus('info', '⏳ 正在提交任務...');
+
+            try {
+                // 發送 POST 請求
+                const response = await fetch(`${API_BASE_URL}/api/tasks/news-report`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_prompt: userPrompt,
+                        email: email
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || '任務創建失敗');
+                }
+
+                const data = await response.json();
+                const taskId = data.task_id;
+
+                showStatus('info', `✅ 任務已創建！任務 ID: ${taskId}`);
+                showStatus('info', '🔄 開始執行，請稍候...');
+
+                // 開始輪詢任務狀態
+                startPolling(taskId);
+
+            } catch (error) {
+                showStatus('error', `❌ 錯誤：${error.message}`);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '開始搜尋';
+            }
+        });
+
+        function startPolling(taskId) {
+            // 清除現有的輪詢
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+
+            // 立即檢查一次
+            checkTaskStatus(taskId);
+
+            // 每 2 秒輪詢一次
+            pollingInterval = setInterval(() => {
+                checkTaskStatus(taskId);
+            }, 2000);
+        }
+
+        async function checkTaskStatus(taskId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`);
+
+                if (!response.ok) {
+                    throw new Error('無法獲取任務狀態');
+                }
+
+                const data = await response.json();
+
+                // 更新進度條
+                progressBarFill.style.width = `${data.progress}%`;
+
+                // 更新進度資訊
+                if (data.step_message) {
+                    progressInfo.textContent = data.step_message;
+                }
+
+                // 根據狀態更新顯示
+                if (data.status === 'succeeded') {
+                    // 任務成功
+                    clearInterval(pollingInterval);
+                    showStatus('success', '🎉 任務完成！報告已生成並發送至您的信箱。');
+                    
+                    // 顯示文件路徑
+                    if (data.artifacts.pdf_path || data.artifacts.xlsx_path) {
+                        let artifactsHtml = '<h4>📎 生成的文件：</h4>';
+                        if (data.artifacts.pdf_path) {
+                            artifactsHtml += `<p>📄 PDF: ${data.artifacts.pdf_path}</p>`;
+                        }
+                        if (data.artifacts.xlsx_path) {
+                            artifactsHtml += `<p>📊 Excel: ${data.artifacts.xlsx_path}</p>`;
+                        }
+                        artifactLinks.innerHTML = artifactsHtml;
+                        artifactLinks.style.display = 'block';
+                    }
+
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '開始搜尋';
+
+                } else if (data.status === 'failed') {
+                    // 任務失敗
+                    clearInterval(pollingInterval);
+                    showStatus('error', `❌ 任務失敗：${data.error || '未知錯誤'}`);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '開始搜尋';
+
+                } else if (data.status === 'running') {
+                    // 任務執行中
+                    showStatus('info', `🔄 執行中... (${data.progress}%)`);
+
+                } else {
+                    // 任務排隊中
+                    showStatus('info', '⏳ 任務排隊中...');
+                }
+
+            } catch (error) {
+                clearInterval(pollingInterval);
+                showStatus('error', `❌ 狀態檢查錯誤：${error.message}`);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '開始搜尋';
+            }
+        }
+
+        function showStatus(type, message) {
+            statusBox.className = `status-box show ${type}`;
+            statusMessage.textContent = message;
+        }
+    </script>
+</body>
+</html>
