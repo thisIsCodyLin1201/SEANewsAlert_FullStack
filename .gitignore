@@ -1,6 +1,6 @@
 # Ignore git repositories in subfolders to avoid conflicts
-FinancialNewsSearch/.git.backup/
-SEANewsAlert/.git.backup/
+FinancialNewsSearch/.git/
+SEANewsAlert/.git/
 
 # Python
 __pycache__/
