@@ -1,13 +1,12 @@
 """
 Research Agent
-負責使用 ChatGPT 進行深度網路搜尋
+負責使用 OpenAI Responses API 進行深度網路搜尋
 """
-from agno.agent import Agent
-from agno.models.openai import OpenAIChat
-from agno.tools.duckduckgo import DuckDuckGoTools
+from openai import OpenAI
 from config import Config
 import json
 from typing import Dict, Any
+from datetime import datetime
 
 
 class ResearchAgent:
@@ -37,42 +36,9 @@ class ResearchAgent:
     
     def __init__(self):
         """初始化 Research Agent"""
-        # 生成可信來源列表文字
-        sources_list = "\n".join([
-            f"  - {src['name']} (site:{src['domain']}) - {src['region']}" 
-            for src in self.TRUSTED_NEWS_SOURCES
-        ])
-        
-        # 生成域名列表用於驗證
-        allowed_domains = ", ".join([src['domain'] for src in self.TRUSTED_NEWS_SOURCES])
-        
-        # 確保使用一致的 OpenAI 端點
-        self.agent = Agent(
-            name="東南亞金融新聞研究員",
-            model=OpenAIChat(
-                id=Config.OPENAI_MODEL,
-                api_key=Config.OPENAI_API_KEY,
-                # max_tokens=2048,
-            ),
-            tools=[DuckDuckGoTools()],
-            description="專門搜尋和分析東南亞金融市場新聞的研究員",
-            instructions=[
-                "你是一位專業的金融新聞研究員，專注於東南亞市場",
-                "使用搜尋工具查找最新、最相關的金融新聞",
-                f"**重要限制**: 你必須只從以下18個指定的可信新聞來源網站搜尋新聞：\n{sources_list}",
-                f"**搜尋技巧**: 使用 DuckDuckGo 的 site: 語法來限制搜尋範圍，例如：'site:viet-jo.com 金融科技'",
-                f"**域名驗證**: 確保所有新聞 URL 的域名必須是以下之一：{allowed_domains}",
-                "**多樣性建議**: 建議對多個不同網站進行搜尋，盡量使用 3-4 個或以上不同來源，但優先確保新聞質量和相關性",
-                "**分區域搜尋策略**: 可以對越南、泰國、新加坡、菲律賓、柬埔寨等區域的網站分別進行搜尋",
-                "搜尋時優先關注：新加坡、馬來西亞、泰國、印尼、越南、菲律賓、柬埔寨等國家",
-                "關注主題包括：股市、匯率、經濟政策、投資趨勢、企業動態、金融科技",
-                "收集至少 5-10 條高質量新聞資訊",
-                "記錄每條新聞的完整來源網址",
-                "以 JSON 格式整理結果",
-                "**最終驗證**: 輸出前必須再次驗證所有 URL 都來自指定的18個可信網站，且來源多樣化"
-            ],
-            markdown=True,
-        )
+        # 初始化 OpenAI 客戶端
+        self.client = OpenAI(api_key=Config.OPENAI_API_KEY)
+        self.model = Config.OPENAI_MODEL
     
     def search(self, query: str, time_instruction: str = "最近 7 天內", num_instruction: str = "5-10篇", language: str = "English") -> Dict[str, Any]:
         """
@@ -89,17 +55,19 @@ class ResearchAgent:
         """
         print(f"🔍 Research Agent 開始搜尋: {query} ({time_instruction}, {num_instruction}, 語言: {language})")
         
-        # 建立語言相關的搜尋關鍵字
-        language_keywords = {
-            "English": "in English",
-            "Chinese": "中文 OR 華語 OR Chinese",
-            "Vietnamese": "tiếng Việt OR Vietnamese",
-            "Thai": "ภาษาไทย OR Thai",
-            "Malay": "Bahasa Melayu OR Malay",
-            "Indonesian": "Bahasa Indonesia OR Indonesian"
+        # 建立語言與國家映射
+        language_config = {
+            "English": {"keywords": "in English", "countries": ["Singapore", "Malaysia", "Thailand", "Vietnam", "Philippines"]},
+            "Chinese": {"keywords": "中文 華語 Chinese", "countries": ["Singapore", "Malaysia"]},
+            "Vietnamese": {"keywords": "tiếng Việt Vietnamese", "countries": ["Vietnam"]},
+            "Thai": {"keywords": "ภาษาไทย Thai", "countries": ["Thailand"]},
+            "Malay": {"keywords": "Bahasa Melayu Malay", "countries": ["Malaysia"]},
+            "Indonesian": {"keywords": "Bahasa Indonesia Indonesian", "countries": ["Indonesia"]}
         }
         
-        language_hint = language_keywords.get(language, "in English")
+        lang_info = language_config.get(language, language_config["English"])
+        language_keywords = lang_info["keywords"]
+        target_countries = ", ".join(lang_info["countries"])
         
         # 生成可信來源列表
         sources_list = "\n".join([
@@ -118,107 +86,147 @@ class ResearchAgent:
         allowed_domains = [src['domain'] for src in self.TRUSTED_NEWS_SOURCES]
         allowed_domains_str = ", ".join(allowed_domains)
         
-        # 強化搜尋提示詞，使用 site: 語法限制來源
+        # 精簡優化的搜尋提示詞
         enhanced_query = f"""
-        請扮演一位頂尖的金融研究員，深入搜尋關於「{query}」的東南亞金融新聞。
+你是東南亞金融研究專家。搜尋主題：「{query}」
 
-        **核心任務指令:**
-        1.  **搜尋範圍**: 嚴格鎖定東南亞國家（新加坡、馬來西亞、泰國、印尼、越南、菲律賓、柬埔寨）。
-        2.  **時間要求**: 嚴格篩選在 **{time_instruction}** 內發布的新聞。
-        3.  **數量要求**: 你的目標是找到並提供 **{num_instruction}** 的高品質新聞。你必須盡力達成這個數量目標。
-        4.  **語言要求**: 請優先搜尋 **{language}** 語言的新聞來源。在搜尋時加上關鍵字：{language_hint}
-        
-        5.  **來源限制（非常重要）**: 你**必須只**從以下18個指定的可信新聞網站搜尋新聞：
+【核心要求】
+- 地區：{target_countries}（東南亞國家）
+- 時間：{time_instruction}
+- 數量：{num_instruction}
+- 來源：{allowed_domains_str}
 
-{sources_list}
+【語言與查詢策略】
+- 目標語言：{language}
+- 步驟1：先用 {language} 生成 5-8 組多樣化關鍵詞（含同義詞、在地用詞、縮寫）
+- 步驟2：用這些關鍵詞執行多輪搜尋，關鍵字提示：{language_keywords}
+- 步驟3：優先回傳 {language} 頁面；不足時補充英文來源並標註語言
 
-        6.  **搜尋技巧 - 強制多樣性策略（非常重要）**:
-            
-            ⚠️ **必須遵守**: 為了確保新聞來源的多樣性，你**必須**對多個不同網站進行**獨立搜尋**。
-            
-            **推薦策略 - 分區域獨立搜尋**:
-            
-            a) 🇻🇳 **越南區域** (至少搜尋 2-3 個網站):
-               - "site:viet-jo.com {query}"
-               - "site:vnexpress.net {query}"
-               - "site:cafef.vn {query}"
-               - "site:vietnamfinance.vn {query}"
-            
-            b) 🇹🇭 **泰國區域** (至少搜尋 1-2 個網站):
-               - "site:bangkokpost.com {query}"
-               - "site:techsauce.co {query}"
-            
-            c) 🇸🇬 **新加坡/區域媒體** (至少搜尋 2-3 個網站):
-               - "site:fintechnews.sg {query}"
-               - "site:techinasia.com {query}"
-               - "site:dealstreetasia.com {query}"
-               - "site:asia.nikkei.com {query}"
-            
-            d) 🇵🇭 **菲律賓區域**:
-               - "site:fintechnews.ph {query}"
-            
-            e) 🇰🇭 **柬埔寨區域**:
-               - "site:khmertimeskh.com {query}"
-               - "site:phnompenhpost.com {query}"
-        
-        7.  **多樣性建議**: 
-            - 💡 **建議做法**: 盡量使用 3-4 個或以上不同的新聞來源
-            - 🔄 **執行方式**: 對不同區域進行搜尋，嘗試從多個網站收集新聞
-            - 📊 **平衡策略**: 優先選擇最相關和高質量的新聞，同時適度考慮來源多樣性
-            - 使用不同的關鍵字變化（中英文、同義詞等）
-            
-        8.  **域名驗證**: 
-            - 確保所有新聞 URL 的域名必須是以下之一：{allowed_domains_str}
-            - 嚴格排除任何不在上述列表中的網站
-            
-        9.  **資訊完整性**: 每條新聞都必須包含清晰的「標題」、「摘要」、「來源網站」、「完整網址」和「發布日期」。
+【搜尋策略】
+1. 對不同域名進行搜尋，確保來源多樣性（至少 3 個不同網站）
+2. 使用多組關鍵詞變化（同義詞、中英文混搭）
+3. 每則新聞需包含：標題、摘要（100-300字）、來源、URL、日期（YYYY-MM-DD）
 
-        **輸出格式要求:**
-        你必須嚴格遵循下面的 JSON 格式返回結果。`results` 陣列必須包含所有找到的新聞。
+【輸出格式】
+回傳 JSON（用 ```json 包裹）：
+```json
+{{
+  "search_query": "{query}",
+  "search_date": "{datetime.now().strftime('%Y-%m-%d')}",
+  "results": [
+    {{
+      "title": "新聞標題（原文）",
+      "summary": "100-300字摘要，包含主要資訊與數據",
+      "source": "來源名稱",
+      "url": "https://...",
+      "date": "YYYY-MM-DD",
+      "language": "{language}"
+    }}
+  ]
+}}
+```
 
-        ```json
-        {{
-            "search_query": "{query}",
-            "search_date": "YYYY-MM-DD",
-            "results": [
-                {{
-                    "title": "新聞標題範例 1",
-                    "summary": "這是第一則新聞的摘要內容...",
-                    "source": "新聞來源 A",
-                    "url": "https://example.com/news-article-1",
-                    "date": "YYYY-MM-DD"
-                }},
-                {{
-                    "title": "新聞標題範例 2",
-                    "summary": "這是第二則新聞的摘要內容...",
-                    "source": "新聞來源 B",
-                    "url": "https://example.com/news-article-2",
-                    "date": "YYYY-MM-DD"
-                }}
-            ]
-        }}
-        ```
+注意：確保 JSON 語法正確、所有欄位完整、日期在指定範圍內。
         """
         
         try:
-            # 使用 Agent 執行搜尋
-            response = self.agent.run(enhanced_query)
+            # 使用 OpenAI Responses API 執行網路搜尋（串流模式）
+            print("🌐 正在啟動串流搜尋...")
             
-            # 提取回應內容
-            if hasattr(response, 'content'):
-                content = response.content
-            else:
-                content = str(response)
-            
+            stream = self.client.responses.create(
+                model=self.model,
+                input=enhanced_query,
+                tools=[
+                    {
+                        "type": "web_search"
+                    }
+                ],
+                stream=True  # 啟用串流模式
+            )
+
+            # 提取回應內容和來源
+            content = ""
+            sources = []
+            web_search_count = 0
+            text_chunks = 0
+
+            # 串流接收事件
+            print("📡 開始接收串流事件...")
+            for event in stream:
+                event_type = event.type
+                
+                # 回應創建事件
+                if event_type == "response.created":
+                    print(f"📡 回應已創建 (ID: {event.response.id})")
+                
+                # 工具呼叫開始
+                elif event_type == "response.output_item.added":
+                    output_item = event.item
+                    if hasattr(output_item, 'type') and output_item.type == "web_search_call":
+                        web_search_count += 1
+                        print(f"🔍 開始第 {web_search_count} 次網路搜尋...")
+                
+                # 工具呼叫完成
+                elif event_type == "response.output_item.done":
+                    output_item = event.item
+                    if hasattr(output_item, 'type') and output_item.type == "web_search_call":
+                        status = getattr(output_item, 'status', 'unknown')
+                        print(f"✅ 網路搜尋完成 (狀態: {status})")
+                
+                # 文字內容片段（逐步接收）
+                elif event_type == "response.content_part.delta":
+                    delta = event.delta
+                    if hasattr(delta, 'text') and delta.text:
+                        content += delta.text
+                        text_chunks += 1
+                        # 每接收 10 個片段顯示一次進度
+                        if text_chunks % 10 == 0:
+                            print(f"📝 已接收 {len(content)} 字元... ({text_chunks} 個片段)")
+                
+                # 內容片段完成（包含 annotations）
+                elif event_type == "response.content_part.done":
+                    # 正確的屬性名稱是 part，不是 content_part
+                    content_part = event.part
+                    if hasattr(content_part, 'text'):
+                        # 確保完整文字被加入
+                        if content_part.text and content_part.text not in content:
+                            content += content_part.text
+                    
+                    # 處理引用/來源資訊
+                    if hasattr(content_part, 'annotations') and content_part.annotations:
+                        for annotation in content_part.annotations:
+                            if annotation.type == "url_citation":
+                                source_info = {
+                                    "title": annotation.title,
+                                    "url": annotation.url,
+                                    "index": annotation.index if hasattr(annotation, 'index') else None
+                                }
+                                sources.append(source_info)
+                                print(f"📌 找到來源: {annotation.title[:50]}...")
+                
+                # 回應完成
+                elif event_type == "response.done":
+                    print("🎉 串流接收完成")
+                
+                # 錯誤事件
+                elif event_type == "error":
+                    error_data = event.error
+                    print(f"❌ 串流錯誤: {error_data}")
+                    raise Exception(f"串流錯誤: {error_data}")
+
             print("✅ Research Agent 搜尋完成")
-            
+            print(f"📰 找到 {len(sources)} 個來源")
+            print(f"📄 總文字長度: {len(content)} 字元")
+            print(f"🔍 執行了 {web_search_count} 次網路搜尋")
+
             return {
                 "status": "success",
                 "query": query,
                 "content": content,
-                "raw_response": response
+                "sources": sources,
+                "web_search_count": web_search_count
             }
-            
+
         except Exception as e:
             print(f"❌ Research Agent 搜尋失敗: {str(e)}")
             return {
@@ -228,9 +236,14 @@ class ResearchAgent:
             }
     
     def test_connection(self) -> bool:
-        """測試 Agent 連接是否正常"""
+        """測試 OpenAI API 連接是否正常"""
         try:
-            test_response = self.agent.run("測試連接")
+            test_response = self.client.responses.create(
+                model=self.model,
+                input="測試連接",
+                tools=[{"type": "web_search"}]
+            )
+            print("✅ OpenAI API 連接成功")
             return True
         except Exception as e:
             print(f"❌ 連接測試失敗: {str(e)}")
