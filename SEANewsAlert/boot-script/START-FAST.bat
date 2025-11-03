@@ -22,49 +22,66 @@ if %errorlevel% neq 0 (
 
 echo [步驟 1/3] 檢查套件...
 
-REM 直接使用系統 Python 檢查 FastAPI 是否已安裝
+REM 檢查並安裝 uv
+where uv >nul 2>&1
+if %errorlevel% neq 0 (
+    echo     正在安裝 uv 套件管理器...
+    python -m pip install --user uv -q
+    echo     ✅ uv 安裝完成
+)
+
+REM 檢查是否存在虛擬環境
+if not exist ".venv" (
+    echo     正在創建虛擬環境...
+    uv venv .venv
+)
+
+REM 啟用虛擬環境
+call .venv\Scripts\activate.bat
+
+REM 檢查並安裝套件（在虛擬環境中）
 python -c "import fastapi" > nul 2>&1
 if %errorlevel% neq 0 (
     echo     安裝 FastAPI...
-    python -m pip install fastapi -q
+    uv pip install fastapi
 )
 
 python -c "import uvicorn" > nul 2>&1
 if %errorlevel% neq 0 (
     echo     安裝 Uvicorn...
-    python -m pip install uvicorn[standard] -q
+    uv pip install uvicorn[standard]
 )
 
 python -c "import pydantic" > nul 2>&1
 if %errorlevel% neq 0 (
     echo     安裝 Pydantic...
-    python -m pip install pydantic[email] -q
+    uv pip install pydantic[email]
 )
 
 REM 檢查 ddgs (DuckDuckGo 搜尋)
 python -c "import ddgs" > nul 2>&1
 if %errorlevel% neq 0 (
     echo     安裝 DuckDuckGo 搜尋工具...
-    python -m pip install ddgs -q
+    uv pip install ddgs
 )
 
 REM 檢查其他關鍵套件
 python -c "import agno" > nul 2>&1
 if %errorlevel% neq 0 (
     echo     安裝 Agno 框架...
-    python -m pip install agno -q
+    uv pip install agno
 )
 
 python -c "import reportlab" > nul 2>&1
 if %errorlevel% neq 0 (
     echo     安裝 ReportLab (PDF 生成)...
-    python -m pip install reportlab -q
+    uv pip install reportlab
 )
 
 python -c "import pandas" > nul 2>&1
 if %errorlevel% neq 0 (
     echo     安裝 Pandas (Excel 生成)...
-    python -m pip install pandas openpyxl -q
+    uv pip install pandas openpyxl
 )
 
 echo     套件檢查完成
@@ -72,7 +89,7 @@ echo     套件檢查完成
 echo [步驟 2/3] 檢查依賴...
 if exist "requirements-api.txt" (
     echo     安裝 API 依賴...
-    python -m pip install -r requirements-api.txt -q
+    uv pip install -r requirements-api.txt
 )
 
 echo [步驟 3/3] 啟動服務...
@@ -88,5 +105,5 @@ echo 按 Ctrl+C 停止服務
 echo ========================================
 echo.
 
-REM 使用系統 Python 啟動（不依賴虛擬環境）
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+REM 使用虛擬環境的 Python 啟動
+.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload

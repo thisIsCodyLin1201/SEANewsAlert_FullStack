@@ -17,25 +17,33 @@ echo "========================================"
 echo
 
 echo "[1/2] 安裝所有必要套件..."
-echo "    建議在虛擬環境中執行： $PY -m venv .venv && source .venv/bin/activate"
+echo "    使用 uv 進行快速安裝..."
 echo
 
-# 如果傳入 --venv 則自動建立並啟用 .venv
-if [ "${1:-}" = "--venv" ]; then
-  echo "建立並啟用虛擬環境 .venv..."
-  $PY -m venv .venv
-  # shellcheck source=/dev/null
-  source .venv/bin/activate
+# 檢查 uv 是否安裝
+if ! command -v uv >/dev/null 2>&1; then
+  echo "[警告] 未找到 uv，正在安裝..."
+  $PY -m pip install --user uv
 fi
 
-echo "正在更新 pip 並安裝套件..."
-$PY -m pip install --upgrade pip
+# 檢查是否存在虛擬環境，如果不存在則創建
+if [ ! -d ".venv" ]; then
+  echo "正在創建虛擬環境..."
+  uv venv .venv
+fi
+
+# 啟用虛擬環境
+echo "啟用虛擬環境..."
+# shellcheck source=/dev/null
+source .venv/bin/activate
+
+echo "正在使用 uv 安裝套件..."
 if [ -f "requirements-api.txt" ]; then
   echo "使用 requirements-api.txt 安裝依賴..."
-  $PY -m pip install -r requirements-api.txt
+  uv pip install -r requirements-api.txt
 else
   # fallback: 安裝常用套件（包括 openai）
-  $PY -m pip install fastapi "uvicorn[standard]" pydantic[email] ddgs agno reportlab pandas openpyxl python-dotenv openai
+  uv pip install fastapi "uvicorn[standard]" pydantic[email] ddgs agno reportlab pandas openpyxl python-dotenv openai
 fi
 
 echo "    ✅ 套件安裝完成"
@@ -53,4 +61,5 @@ echo "按 Ctrl+C 停止服務"
 echo "========================================"
 echo
 
-$PY -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+# 確保使用虛擬環境的 Python
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload

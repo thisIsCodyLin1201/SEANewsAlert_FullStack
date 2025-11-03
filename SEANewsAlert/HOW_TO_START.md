@@ -17,10 +17,25 @@ chmod +x boot-script/*.sh      # 首次執行
 
 ## 📋 手動啟動
 
+### 🚀 使用 uv（推薦 - 快 10-100 倍）
+```bash
+# 安裝 uv（首次）
+pip install uv
+
+# 安裝依賴
+uv pip install -r requirements-api.txt --system
+
+# 啟動服務
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+### 📦 使用傳統 pip
 ```bash
 pip install -r requirements-api.txt
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
+
+> 💡 **提示**: 本專案已整合 uv 套件管理器，所有啟動腳本會自動使用 uv 進行快速安裝。詳見 [UV_MIGRATION.md](./UV_MIGRATION.md)
 
 ## 🌐 訪問服務
 
@@ -75,7 +90,19 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 
 ---
 
-**版本**: 2.0.0 | **架構**: FastAPI + RESTful API
+## 🔥 UV 套件管理器
+
+本專案已整合 **uv** 套件管理器，提供極速的套件安裝體驗：
+
+- ⚡ 比 pip 快 10-100 倍
+- 🔒 更可靠的依賴解析
+- 💾 智能快取機制
+
+詳細說明請參考：[UV_MIGRATION.md](./UV_MIGRATION.md)
+
+---
+
+**版本**: 2.0.0 | **架構**: FastAPI + RESTful API | **套件管理**: uv
 
 ## 方法 3: 使用 Python 主程式
 

@@ -18,12 +18,30 @@ echo
 
 echo "[步驟 1/3] 檢查套件..."
 
+# 檢查並安裝 uv
+if ! command -v uv >/dev/null 2>&1; then
+  echo "    正在安裝 uv 套件管理器..."
+  "$PY" -m pip install --user uv
+  echo "    ✅ uv 安裝完成"
+fi
+
+# 檢查是否存在虛擬環境
+if [ ! -d ".venv" ]; then
+  echo "    正在創建虛擬環境..."
+  uv venv .venv
+fi
+
+# 啟用虛擬環境
+echo "    啟用虛擬環境..."
+# shellcheck source=/dev/null
+source .venv/bin/activate
+
 check_and_install() {
   module="$1"
   pkg="$2"
-  if ! "$PY" -c "import ${module}" >/dev/null 2>&1; then
+  if ! python -c "import ${module}" >/dev/null 2>&1; then
     echo "    安裝 ${pkg}..."
-    "$PY" -m pip install "${pkg}"
+    uv pip install "${pkg}"
   fi
 }
 
@@ -33,9 +51,9 @@ check_and_install pydantic "pydantic[email]"
 check_and_install ddgs ddgs
 check_and_install agno agno
 check_and_install reportlab reportlab
-if ! "$PY" -c "import pandas" >/dev/null 2>&1; then
+if ! python -c "import pandas" >/dev/null 2>&1; then
   echo "    安裝 Pandas (及 openpyxl)..."
-  "$PY" -m pip install pandas openpyxl
+  uv pip install pandas openpyxl
 fi
 
 echo "    套件檢查完成"
@@ -43,7 +61,7 @@ echo "    套件檢查完成"
 echo "[步驟 2/3] 檢查依賴..."
 if [ -f "requirements-api.txt" ]; then
   echo "    安裝 API 依賴 (requirements-api.txt)..."
-  "$PY" -m pip install -r requirements-api.txt
+  uv pip install -r requirements-api.txt
 fi
 
 echo "[步驟 3/3] 啟動服務..."
@@ -59,5 +77,5 @@ echo "按 Ctrl+C 停止服務"
 echo "========================================"
 echo
 
-# 使用系統 Python 啟動（不強制使用虛擬環境）
-"$PY" -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+# 使用虛擬環境的 Python 啟動
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload

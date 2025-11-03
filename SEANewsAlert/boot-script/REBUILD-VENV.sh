@@ -32,14 +32,19 @@ if ! command -v "$PY" >/dev/null 2>&1; then
   fi
 fi
 
-"$PY" -m venv .venv
-echo "    創建成功"
+# 檢查並安裝 uv
+if ! command -v uv >/dev/null 2>&1; then
+  echo "    正在安裝 uv 套件管理器..."
+  "$PY" -m pip install uv
+fi
+
+uv venv .venv
+echo "    創建成功 (使用 uv)"
 
 echo "[3/3] 安裝基礎套件..."
 # shellcheck source=/dev/null
 source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install fastapi "uvicorn[standard]" "pydantic[email]"
+uv pip install fastapi "uvicorn[standard]" "pydantic[email]"
 
 echo
 echo "========================================"
