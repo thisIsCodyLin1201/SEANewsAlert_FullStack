@@ -28,7 +28,14 @@ GitHub 下載 .zip 時，`.bat` 檔案的編碼可能被破壞。
 #### 方法 2: 手動啟動
 
 ```bash
-# 1. 安裝依賴
+# 1. 安裝依賴（推薦使用 uv，速度更快）
+# 安裝 uv（如果未安裝）
+pip install uv
+
+# 使用 uv 安裝套件（快 10-100 倍！）
+uv pip install -r requirements-api.txt --system
+
+# 或使用傳統 pip
 pip install -r requirements-api.txt
 
 # 2. 啟動服務
@@ -75,7 +82,12 @@ EMAIL_PASSWORD=你的Gmail應用程式密碼
 # 方式 A: 使用簡化版腳本（推薦）
 .\boot-script\START-SIMPLE.bat
 
-# 方式 B: 手動啟動
+# 方式 B: 手動啟動（使用 uv，更快）
+pip install uv
+uv pip install -r requirements-api.txt --system
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+# 方式 C: 手動啟動（傳統 pip）
 pip install -r requirements-api.txt
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```

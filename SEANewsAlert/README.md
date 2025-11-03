@@ -17,7 +17,7 @@
 - **後端框架**: FastAPI 0.109.0+
 - **Web 伺服器**: Uvicorn (ASGI)
 - **語言**: Python 3.11+
-- **套件管理**: pip
+- **套件管理**: uv (極速套件管理器，比 pip 快 10-100 倍) ⚡
 - **前端**: 簡易 HTML（public/index.html）+ 完整 API 供自訂前端使用
 - **PDF 生成**: ReportLab
 - **Excel 生成**: Pandas + openpyxl

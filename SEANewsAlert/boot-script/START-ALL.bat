@@ -13,11 +13,25 @@ echo.
 
 echo [1/2] 安裝所有必要套件...
 echo     這可能需要 1-2 分鐘，請稍候...
+echo     使用 uv 進行快速安裝...
 echo.
 
-REM 使用 requirements-api.txt 安裝所有套件
-python -m pip install --upgrade pip -q
-python -m pip install -r requirements-api.txt -q
+REM 檢查 uv 是否安裝
+where uv >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [警告] 未找到 uv，正在安裝...
+    python -m pip install --user uv -q
+)
+
+REM 檢查是否存在虛擬環境，如果不存在則創建
+if not exist ".venv" (
+    echo     正在創建虛擬環境...
+    uv venv .venv
+)
+
+REM 啟用虛擬環境並安裝套件
+call .venv\Scripts\activate.bat
+uv pip install -r requirements-api.txt
 
 if %errorlevel% neq 0 (
     echo [錯誤] 套件安裝失敗
@@ -42,4 +56,5 @@ echo 按 Ctrl+C 停止服務
 echo ========================================
 echo.
 
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+REM 確保使用虛擬環境的 Python
+.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload

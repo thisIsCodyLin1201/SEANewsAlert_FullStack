@@ -23,17 +23,24 @@ if exist ".venv" (
 )
 
 echo [2/3] 創建新的虛擬環境...
-python -m venv .venv
+
+REM 檢查並安裝 uv
+where uv >nul 2>&1
+if %errorlevel% neq 0 (
+    echo     正在安裝 uv 套件管理器...
+    python -m pip install uv -q
+)
+
+uv venv .venv
 if %errorlevel% neq 0 (
     echo [錯誤] 創建失敗，請檢查 Python 安裝
     pause
     exit /b 1
 )
-echo     創建成功
+echo     創建成功 (使用 uv)
 
 echo [3/3] 安裝基礎套件...
-.venv\Scripts\python.exe -m pip install --upgrade pip
-.venv\Scripts\python.exe -m pip install fastapi uvicorn[standard] pydantic[email]
+uv pip install fastapi uvicorn[standard] pydantic[email]
 
 echo.
 echo ========================================

@@ -72,8 +72,22 @@ REM 步驟 3: 安裝後端依賴
 REM ===================================================
 echo [3/5] 安裝後端套件...
 
-python -m pip install --upgrade pip -q
-python -m pip install -r requirements-api.txt -q
+REM 檢查並安裝 uv
+where uv >nul 2>&1
+if %errorlevel% neq 0 (
+    echo     正在安裝 uv 套件管理器...
+    python -m pip install --user uv -q
+)
+
+REM 檢查並創建虛擬環境
+if not exist ".venv" (
+    echo     正在創建虛擬環境...
+    uv venv .venv
+)
+
+REM 啟用虛擬環境並安裝
+call .venv\Scripts\activate.bat
+uv pip install -r requirements-api.txt
 
 if %errorlevel% neq 0 (
     echo     ❌ 後端套件安裝失敗
@@ -81,7 +95,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo     ✅ 後端套件安裝完成
+echo     ✅ 後端套件安裝完成 (使用 uv)
 echo.
 
 REM ===================================================

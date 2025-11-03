@@ -68,8 +68,22 @@ REM Step 3: Install backend dependencies
 REM ===================================================
 echo [3/5] Installing backend packages...
 
-python -m pip install --upgrade pip -q
-python -m pip install -r requirements-api.txt -q
+REM Check and install uv
+where uv >nul 2>&1
+if %errorlevel% neq 0 (
+    echo     Installing uv package manager...
+    python -m pip install --user uv -q
+)
+
+REM Check and create virtual environment
+if not exist ".venv" (
+    echo     Creating virtual environment...
+    uv venv .venv
+)
+
+REM Activate and install
+call .venv\Scripts\activate.bat
+uv pip install -r requirements-api.txt
 
 if %errorlevel% neq 0 (
     echo     Backend installation failed
@@ -77,7 +91,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo     Backend packages installed
+echo     Backend packages installed (using uv)
 echo.
 
 REM ===================================================
