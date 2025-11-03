@@ -124,7 +124,7 @@ class ReportGeneratorAgent:
             parent=self.styles['BodyText'],
             fontSize=11,
             leading=16,
-            alignment=TA_JUSTIFY,
+            alignment=TA_LEFT,  # 改為左對齊，避免英文單詞間產生過多空格
             fontName=self.chinese_font if hasattr(self, 'chinese_font') else 'Helvetica'
         ))
     
@@ -251,8 +251,8 @@ class ReportGeneratorAgent:
     
     def _clean_markdown_links(self, text: str) -> str:
         """清理 Markdown 連結格式"""
-        # [文字](URL) -> 文字 (URL)
-        text = re.sub(r'\[(.*?)\]\((.*?)\)', r'\1 (<font color="blue">\2</font>)', text)
+        # [文字](URL) -> 文字 URL （移除括號，讓連結更簡潔）
+        text = re.sub(r'\[(.*?)\]\((.*?)\)', r'\1 <font color="blue">\2</font>', text)
         return text
     
     def generate_excel(
