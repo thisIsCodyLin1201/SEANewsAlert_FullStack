@@ -56,5 +56,5 @@ echo 按 Ctrl+C 停止服務
 echo ========================================
 echo.
 
-REM 確保使用虛擬環境的 Python
-.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+REM 確保使用虛擬環境的 Python，並排除 .venv 目錄避免無限重載
+.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir app --reload-dir agents --reload-dir utils

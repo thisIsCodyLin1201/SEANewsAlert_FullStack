@@ -61,5 +61,5 @@ echo "按 Ctrl+C 停止服務"
 echo "========================================"
 echo
 
-# 確保使用虛擬環境的 Python
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+# 確保使用虛擬環境的 Python，只監控特定目錄
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir app --reload-dir agents --reload-dir utils

@@ -130,7 +130,7 @@ REM 切回後端目錄啟動 API
 cd /d "%~dp0\.."
 
 echo     🔧 正在啟動後端 API...
-start "後端 API (Port 8000)" cmd /k "cd /d "%~dp0\.." && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload"
+start "後端 API (Port 8000)" cmd /k "cd /d "%~dp0\.." && .venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir app --reload-dir agents --reload-dir utils"
 timeout /t 3 /nobreak >nul
 echo     ✅ 後端已在新視窗啟動
 echo.
