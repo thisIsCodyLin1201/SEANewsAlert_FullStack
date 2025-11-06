@@ -43,7 +43,7 @@ if [ -f "requirements-api.txt" ]; then
   uv pip install -r requirements-api.txt
 else
   # fallback: 安裝常用套件（包括 openai）
-  uv pip install fastapi "uvicorn[standard]" pydantic[email] ddgs agno reportlab pandas openpyxl python-dotenv openai
+  uv pip install fastapi "uvicorn[standard]" pydantic[email] agno reportlab pandas openpyxl python-dotenv openai
 fi
 
 echo "    ✅ 套件安裝完成"

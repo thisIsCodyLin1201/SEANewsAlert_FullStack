@@ -48,7 +48,6 @@ check_and_install() {
 check_and_install fastapi fastapi
 check_and_install uvicorn "uvicorn[standard]"
 check_and_install pydantic "pydantic[email]"
-check_and_install ddgs ddgs
 check_and_install agno agno
 check_and_install reportlab reportlab
 if ! python -c "import pandas" >/dev/null 2>&1; then
