@@ -58,13 +58,6 @@ if %errorlevel% neq 0 (
     uv pip install pydantic[email]
 )
 
-REM 檢查 ddgs (DuckDuckGo 搜尋)
-python -c "import ddgs" > nul 2>&1
-if %errorlevel% neq 0 (
-    echo     安裝 DuckDuckGo 搜尋工具...
-    uv pip install ddgs
-)
-
 REM 檢查其他關鍵套件
 python -c "import agno" > nul 2>&1
 if %errorlevel% neq 0 (

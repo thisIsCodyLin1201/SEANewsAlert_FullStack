@@ -64,6 +64,28 @@ echo     Frontend project verified
 echo.
 
 REM ===================================================
+REM Step 2.5: Check if npm is installed
+REM ===================================================
+where npm >nul 2>&1
+if %errorlevel% neq 0 (
+    echo.
+    echo ERROR: npm not found
+    echo.
+    echo npm is the Node.js package manager required for the frontend.
+    echo.
+    echo Please install Node.js first:
+    echo 1. Visit https://nodejs.org/
+    echo 2. Download and install the LTS version
+    echo 3. Restart this script after installation
+    echo.
+    pause
+    exit /b 1
+)
+
+echo     npm is installed
+echo.
+
+REM ===================================================
 REM Step 3: Install backend dependencies
 REM ===================================================
 echo [3/5] Installing backend packages...
