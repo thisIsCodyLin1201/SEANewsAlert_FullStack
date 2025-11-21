@@ -40,7 +40,7 @@ class ResearchAgent:
         self.client = OpenAI(api_key=Config.OPENAI_API_KEY)
         self.model = Config.OPENAI_MODEL
     
-    def search(self, query: str, time_instruction: str = "最近 7 天內", num_instruction: str = "5-10篇", language: str = "English") -> Dict[str, Any]:
+    def search(self, query: str, time_instruction: str = "最近 7 天內", num_instruction: str = "5-10篇", language: str = "English", task_id: str = None) -> Dict[str, Any]:
         """
         執行搜尋
         
@@ -49,11 +49,21 @@ class ResearchAgent:
             time_instruction: 時間範圍指令 (例如: "最近一個月內")
             num_instruction: 新聞數量指令 (例如: "約15篇")
             language: 新聞來源語言 (例如: "English", "Chinese", "Vietnamese", "Thai", "Malay", "Indonesian")
+            task_id: 可選的任務 ID，用於更新前端進度顯示
             
         Returns:
             Dict: 包含搜尋結果和來源的字典
         """
         print(f"🔍 Research Agent 開始搜尋: {query} ({time_instruction}, {num_instruction}, 語言: {language})")
+        
+        # 動態導入 task_manager（避免循環導入）
+        task_manager = None
+        if task_id:
+            try:
+                from app.services.progress import task_manager as tm
+                task_manager = tm
+            except ImportError:
+                print("⚠️ 無法導入 task_manager，將不更新前端進度")
         
         # 建立語言與國家映射
         language_config = {
@@ -152,6 +162,9 @@ class ResearchAgent:
 
             # 串流接收事件
             print("📡 開始接收串流事件...")
+            if task_manager and task_id:
+                task_manager.set_progress(task_id, 35, "searching", "📡 開始接收串流事件...")
+            
             for event in stream:
                 event_type = event.type
                 
@@ -164,14 +177,20 @@ class ResearchAgent:
                     output_item = event.item
                     if hasattr(output_item, 'type') and output_item.type == "web_search_call":
                         web_search_count += 1
-                        print(f"🔍 開始第 {web_search_count} 次網路搜尋...")
+                        message = f"🔍 開始第 {web_search_count} 次網路搜尋..."
+                        print(message)
+                        if task_manager and task_id:
+                            task_manager.set_progress(task_id, 35 + web_search_count * 2, "searching", message)
                 
                 # 工具呼叫完成
                 elif event_type == "response.output_item.done":
                     output_item = event.item
                     if hasattr(output_item, 'type') and output_item.type == "web_search_call":
                         status = getattr(output_item, 'status', 'unknown')
-                        print(f"✅ 網路搜尋完成 (狀態: {status})")
+                        message = f"✅ 第 {web_search_count} 次網路搜尋完成 (狀態: {status})"
+                        print(message)
+                        if task_manager and task_id:
+                            task_manager.set_progress(task_id, 40 + web_search_count * 2, "searching", message)
                 
                 # 文字內容片段（逐步接收）
                 elif event_type == "response.content_part.delta":
@@ -202,11 +221,24 @@ class ResearchAgent:
                                     "index": annotation.index if hasattr(annotation, 'index') else None
                                 }
                                 sources.append(source_info)
-                                print(f"📌 找到來源: {annotation.title[:50]}...")
+                                message = f"📌 找到第 {len(sources)} 篇文章\n標題：{annotation.title[:80]}\n網址：{annotation.url}"
+                                print(f"📌 找到來源: {annotation.title[:50]}... - {annotation.url}")
+                                
+                                # ✅ 即時更新前端進度（顯示正在抓取的文章網址）
+                                if task_manager and task_id:
+                                    task_manager.set_progress(
+                                        task_id,
+                                        min(45 + len(sources) * 2, 65),  # 從 45% 開始，每篇文章增加 2%，最多到 65%
+                                        "searching",
+                                        message
+                                    )
                 
                 # 回應完成
                 elif event_type == "response.done":
+                    message = f"🎉 串流接收完成\n📰 共找到 {len(sources)} 個來源\n🔍 執行了 {web_search_count} 次網路搜尋"
                     print("🎉 串流接收完成")
+                    if task_manager and task_id:
+                        task_manager.set_progress(task_id, 65, "searching", message)
                 
                 # 錯誤事件
                 elif event_type == "error":

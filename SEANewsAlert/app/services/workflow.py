@@ -157,16 +157,25 @@ class NewsReportWorkflow:
                 query=parsed_prompt['keywords'],
                 time_instruction=parsed_prompt['time_instruction'],
                 num_instruction=parsed_prompt['num_instruction'],
-                language=parsed_prompt['language']
+                language=parsed_prompt['language'],
+                task_id=task_id  # ✅ 傳遞 task_id 以支持前端即時進度更新
             )
             
             if search_results.get("status") == "error":
                 raise Exception(f"搜尋失敗: {search_results.get('error')}")
             
-            task_manager.set_progress(task_id, 40, "searching", "✅ 新聞搜尋完成")
+            # ✅ 顯示找到的來源（sources 陣列）
+            sources = search_results.get("sources", [])
+            sources_summary = f"✅ 新聞搜尋完成\n📰 共找到 {len(sources)} 個來源\n"
+            if sources:
+                sources_summary += "\n".join([f"{i+1}. {s['title'][:60]}...\n   {s['url']}" for i, s in enumerate(sources[:5])])
+                if len(sources) > 5:
+                    sources_summary += f"\n... 還有 {len(sources) - 5} 個來源"
+            
+            task_manager.set_progress(task_id, 67, "searching", sources_summary)
             
             # ============ 步驟 2: 資訊結構化 ============
-            task_manager.set_progress(task_id, 45, "analyzing", "📊 正在分析並結構化資訊...")
+            task_manager.set_progress(task_id, 70, "analyzing", "📊 正在分析並結構化資訊...")
             
             markdown_report, structured_news = self.analyst_agent.analyze(search_results)
             
