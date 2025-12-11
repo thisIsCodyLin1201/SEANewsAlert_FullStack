@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進度測試頁面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .progress-section {
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        .progress-bar-bg {
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-bar {
+            background-color: #4CAF50;
+            height: 100%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .message-box {
+            background: white;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            color: red;
+            padding: 10px;
+            background: #ffebee;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .debug {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 進度測試頁面</h1>
+        
+        <div class="input-group">
+            <label>搜尋需求：</label>
+            <textarea id="prompt" rows="3" placeholder="請輸入搜尋需求...">新加坡金融科技最新動態</textarea>
+        </div>
+        
+        <div class="input-group">
+            <label>Email：</label>
+            <input type="email" id="email" placeholder="your.email@example.com" value="test@example.com">
+        </div>
+        
+        <button id="startBtn" onclick="startTask()">開始生成報告</button>
+        
+        <div id="progressSection" style="display: none;" class="progress-section">
+            <h3>⏳ 任務狀態：<span id="status">-</span></h3>
+            <div class="progress-bar-bg">
+                <div id="progressBar" class="progress-bar" style="width: 0%">0%</div>
+            </div>
+            <p><strong>🔍 當前步驟：</strong><span id="step">-</span></p>
+            <div id="messageBox" class="message-box" style="display: none;"></div>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="success" class="success" style="display: none;"></div>
+        
+        <div class="debug">
+            <h3>📊 Debug 資訊（最新 API 回應）：</h3>
+            <pre id="debugInfo">等待開始...</pre>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = "http://localhost:8000/api/tasks";
+        let taskId = null;
+        let pollInterval = null;
+
+        async function startTask() {
+            const prompt = document.getElementById('prompt').value.trim();
+            const email = document.getElementById('email').value.trim();
+            
+            if (!prompt || !email) {
+                showError("請填寫所有欄位");
+                return;
+            }
+            
+            hideMessages();
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('progressSection').style.display = 'none';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/news-report`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_prompt: prompt,
+                        email: email,
+                        language: "Chinese",
+                        time_range: "最近7天內",
+                        count_hint: "5-10篇"
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                taskId = data.task_id;
+                console.log("✅ 任務建立成功:", data);
+                updateDebug(`任務建立成功\nTask ID: ${taskId}`);
+                
+                document.getElementById('progressSection').style.display = 'block';
+                startPolling();
+                
+            } catch (error) {
+                showError("建立任務失敗: " + error.message);
+                document.getElementById('startBtn').disabled = false;
+            }
+        }
+
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+            
+            pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${BASE_URL}/${taskId}`);
+                    if (!response.ok) throw new Error("查詢失敗");
+                    
+                    const data = await response.json();
+                    console.log("📊 收到進度資料:", data);
+                    updateDebug(JSON.stringify(data, null, 2));
+                    
+                    // 更新進度顯示
+                    document.getElementById('status').textContent = data.status;
+                    document.getElementById('progressBar').style.width = data.progress + '%';
+                    document.getElementById('progressBar').textContent = data.progress + '%';
+                    
+                    if (data.current_step) {
+                        document.getElementById('step').textContent = data.current_step;
+                    }
+                    
+                    if (data.step_message) {
+                        const msgBox = document.getElementById('messageBox');
+                        msgBox.style.display = 'block';
+                        msgBox.textContent = data.step_message;
+                    }
+                    
+                    // 檢查是否完成
+                    if (data.status === 'succeeded') {
+                        clearInterval(pollInterval);
+                        showSuccess("✅ 任務完成！");
+                        document.getElementById('startBtn').disabled = false;
+                    } else if (data.status === 'failed') {
+                        clearInterval(pollInterval);
+                        showError("❌ 任務失敗: " + (data.error || "未知錯誤"));
+                        document.getElementById('startBtn').disabled = false;
+                    }
+                    
+                } catch (error) {
+                    console.error("輪詢錯誤:", error);
+                    clearInterval(pollInterval);
+                    showError("查詢進度失敗");
+                    document.getElementById('startBtn').disabled = false;
+                }
+            }, 2000);
+        }
+
+        function updateDebug(text) {
+            document.getElementById('debugInfo').textContent = text;
+        }
+
+        function showError(msg) {
+            const elem = document.getElementById('error');
+            elem.textContent = msg;
+            elem.style.display = 'block';
+        }
+
+        function showSuccess(msg) {
+            const elem = document.getElementById('success');
+            elem.textContent = msg;
+            elem.style.display = 'block';
+        }
+
+        function hideMessages() {
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

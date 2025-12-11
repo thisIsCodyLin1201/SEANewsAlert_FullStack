@@ -36,6 +36,7 @@ const NewsReportForm: React.FC = () => {
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.toLowerCase());
 
   const handleGenerateReport = async () => {
+    console.log("🚀 開始生成報告...");
     setErrorMessage("");
     setSuccessMessage("");
 
@@ -56,6 +57,8 @@ const NewsReportForm: React.FC = () => {
     setProgress(null);
     setTaskId(null);
 
+    console.log("📡 準備發送 API 請求到:", `${BASE_URL}/news-report`);
+
     try {
       const response = await fetch(`${BASE_URL}/news-report`, {
         method: "POST",
@@ -69,8 +72,11 @@ const NewsReportForm: React.FC = () => {
         }),
       });
 
+      console.log("📡 API 回應狀態:", response.status);
+
       if (!response.ok) {
         const err = await response.json();
+        console.error("❌ API 錯誤:", err);
         if (err.detail?.[0]?.msg?.includes("quota")) {
           throw new Error("API 配額已用完，請稍後再試");
         }
@@ -78,10 +84,13 @@ const NewsReportForm: React.FC = () => {
       }
 
       const data: TaskResponse = await response.json();
-      console.log("✅ 任務建立成功:", data);
+      console.log("✅ 任務建立成功，Task ID:", data.task_id);
+      console.log("✅ 完整回應資料:", data);
       setTaskId(data.task_id);
       setStatus("running");
+      console.log("🔄 已設定 taskId，useEffect 應該會開始輪詢");
     } catch (error: unknown) {
+      console.error("❌ 建立任務失敗:", error);
       setErrorMessage(
         error instanceof Error ? error.message : "建立任務時發生錯誤"
       );
@@ -92,18 +101,21 @@ const NewsReportForm: React.FC = () => {
   useEffect(() => {
     if (!taskId) return;
 
+    console.log("🔄 開始輪詢任務進度，Task ID:", taskId);
+
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`${BASE_URL}/${taskId}`);
         if (!res.ok) throw new Error("查詢任務失敗");
         
         const data: TaskProgress = await res.json();
-        console.log("📊 後端回傳的進度資料:", data);
+        console.log("📊 後端回傳的進度資料:", JSON.stringify(data, null, 2));
         
         setProgress(data);
 
         // ✅ 成功狀態
         if (data.status === "succeeded") {
+          console.log("✅ 任務成功完成");
           clearInterval(interval);
           setStatus("idle");
           setSuccessMessage(
@@ -116,6 +128,7 @@ const NewsReportForm: React.FC = () => {
         } 
         // ❌ 失敗狀態（顯示實際錯誤）
         else if (data.status === "failed") {
+          console.log("❌ 任務失敗:", data.error);
           clearInterval(interval);
           setStatus("idle");
           setErrorMessage(data.error || "任務執行失敗，請稍後再試");
@@ -123,6 +136,9 @@ const NewsReportForm: React.FC = () => {
           setProgress(null);
         }
         // ℹ️ 其他狀態（pending、running 等）繼續輪詢
+        else {
+          console.log(`ℹ️ 任務進行中 - 狀態: ${data.status}, 進度: ${data.progress}%, 步驟: ${data.current_step}`);
+        }
       } catch (err) {
         console.error("❌ 查詢任務時發生錯誤:", err);
         clearInterval(interval);
@@ -133,7 +149,10 @@ const NewsReportForm: React.FC = () => {
       }
     }, 2000);
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log("🛑 停止輪詢");
+      clearInterval(interval);
+    };
   }, [taskId, userEmail]);
 
   return (
@@ -184,30 +203,90 @@ const NewsReportForm: React.FC = () => {
         </button>
       </div>
 
-      {/* ✅ 進度條 - 除錯版本 */}
-      {(() => {
-        console.log("🔍 Debug - progress:", progress, "status:", status);
-        return null;
-      })()}
-      {progress && (
-        <div className="progress-section" style={{ 
-          border: "2px solid red", 
-          padding: "15px", 
-          margin: "20px 0",
-          backgroundColor: "#fff3cd"
-        }}>
-          <p><strong>⏳ 任務狀態：{progress.status}</strong></p>
-          <div className="progress-bar-wrapper">
-            <div
-              className="progress-bar"
-              style={{ width: `${progress.progress}%` }}
-            ></div>
+      {/* ✅ Debug 訊息 */}
+      <div style={{ margin: "20px 0", padding: "15px", backgroundColor: "#e3f2fd", border: "2px solid #2196F3", borderRadius: "5px" }}>
+        <h3 style={{ margin: "0 0 10px 0", color: "#1976D2" }}>🐛 Debug 資訊</h3>
+        <p><strong>taskId:</strong> {taskId || "null"}</p>
+        <p><strong>status:</strong> {status}</p>
+        <p><strong>progress 是否存在:</strong> {progress ? "是 ✅" : "否 ❌"}</p>
+        {progress && (
+          <div>
+            <p><strong>progress.status:</strong> {progress.status}</p>
+            <p><strong>progress.progress:</strong> {progress.progress}%</p>
+            <p><strong>progress.current_step:</strong> {progress.current_step || "無"}</p>
           </div>
-          <p><strong>📈 進度：{progress.progress}%</strong></p>
-          {progress.current_step && <p><strong>🔍 步驟：{progress.current_step}</strong></p>}
-          {progress.step_message && <p><strong>{progress.step_message}</strong></p>}
-          <hr />
-          <pre style={{ fontSize: "12px", background: "#f5f5f5", padding: "10px" }}>
+        )}
+      </div>
+
+      {/* ✅ 進度條 - 強制顯示測試版 */}
+      {progress && (
+        <div style={{ 
+          border: "3px solid red", 
+          padding: "20px", 
+          margin: "20px 0",
+          backgroundColor: "yellow",
+          borderRadius: "8px",
+          position: "relative",
+          zIndex: 9999
+        }}>
+          <h2 style={{ color: "red", fontSize: "24px" }}>進度區塊 - 如果你看到這個就是有渲染！</h2>
+          <p style={{ fontSize: "16px", marginBottom: "10px" }}>
+            <strong>⏳ 任務狀態：{progress.status}</strong>
+          </p>
+          <p style={{ fontSize: "16px", marginBottom: "10px" }}>
+            <strong>📈 進度：{progress.progress}%</strong>
+          </p>
+          <div style={{ 
+            backgroundColor: "#e0e0e0", 
+            borderRadius: "10px", 
+            overflow: "hidden",
+            height: "30px",
+            marginBottom: "15px",
+            border: "2px solid blue"
+          }}>
+            <div
+              style={{ 
+                width: `${progress.progress}%`,
+                backgroundColor: "#4CAF50",
+                height: "100%",
+                transition: "width 0.3s ease",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "14px"
+              }}
+            >
+              {progress.progress}%
+            </div>
+          </div>
+          {progress.current_step && (
+            <p style={{ fontSize: "14px", marginBottom: "10px", color: "#000", backgroundColor: "white", padding: "10px" }}>
+              <strong>🔍 步驟：{progress.current_step}</strong>
+            </p>
+          )}
+          {progress.step_message && (
+            <div style={{ 
+              backgroundColor: "#fff", 
+              padding: "15px", 
+              borderRadius: "5px",
+              border: "2px solid green",
+              marginTop: "10px",
+              whiteSpace: "pre-wrap",
+              fontFamily: "monospace",
+              fontSize: "13px",
+              lineHeight: "1.6",
+              maxHeight: "300px",
+              overflowY: "auto",
+              color: "black"
+            }}>
+              <strong>訊息內容：</strong><br/>
+              {progress.step_message}
+            </div>
+          )}
+          <hr/>
+          <pre style={{ fontSize: "11px", backgroundColor: "white", padding: "10px", border: "1px solid black" }}>
             {JSON.stringify(progress, null, 2)}
           </pre>
         </div>
